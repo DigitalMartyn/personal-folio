@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Works CMS</title>
+  <link rel="stylesheet" href="/cms/admin.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Works <span>CMS</span></div>
+    <div class="actions">
+      <span id="status" class="status"></span>
+      <button id="addBtn" class="btn">+ Add project</button>
+      <button id="saveBtn" class="btn btn-primary">Save</button>
+      <button id="bakeBtn" class="btn btn-dark">Bake to site</button>
+    </div>
+  </header>
+
+  <main>
+    <table id="grid">
+      <thead>
+        <tr>
+          <th class="col-drag"></th>
+          <th>Title</th>
+          <th>Status</th>
+          <th>Subtitle</th>
+          <th>Slug</th>
+          <th>Cover</th>
+          <th>Work&nbsp;Detail</th>
+          <th>Industry</th>
+          <th class="col-edit"></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="hint">
+      Edit inline, then <b>Save</b> to store, and <b>Bake to site</b> to write the
+      static pages. Draft projects are hidden from the site. Use <b>Edit</b> to change
+      the client / year / experience, SEO, and page body sections.
+    </p>
+  </main>
+
+  <!-- Detail editor drawer -->
+  <div id="drawer" class="drawer hidden">
+    <div class="drawer-head">
+      <h2 id="drawerTitle">Edit project</h2>
+      <button id="drawerClose" class="btn">Close</button>
+    </div>
+    <div id="drawerBody" class="drawer-body"></div>
+  </div>
+  <div id="scrim" class="scrim hidden"></div>
+
+  <script src="/cms/admin.js"></script>
+</body>
+</html>

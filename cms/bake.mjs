@@ -69,7 +69,6 @@ function bakeListing(data) {
   let html = fs.readFileSync(file, "utf8");
   html = replaceRegion(html, 'data-cms-cards="listing"', renderListing(data.projects));
   fs.writeFileSync(file, html);
-  console.log("  ✓ works listing cards");
 }
 
 function bakeHome(data, slugs) {
@@ -77,24 +76,33 @@ function bakeHome(data, slugs) {
   let html = fs.readFileSync(file, "utf8");
   html = normalizeHrefs(html, slugs);
   fs.writeFileSync(file, html);
-  console.log("  ✓ home featured links");
 }
 
-function main() {
+export function bake() {
   const data = JSON.parse(fs.readFileSync(worksJsonPath(), "utf8"));
   const slugs = data.projects.map((p) => p.slug);
+  const log = [];
   let baked = 0;
   for (const p of data.projects) {
     if (p.status !== "live" || !p.hasDetail) continue;
     const r = bakeProject(p, slugs);
     if (!r.skipped) {
       baked += 1;
-      console.log(`  ✓ ${p.slug}`);
+      log.push(`✓ ${p.slug}`);
     }
   }
   bakeListing(data);
+  log.push("✓ works listing cards");
   bakeHome(data, slugs);
-  console.log(`Baked ${baked} project page(s) + listing + home.`);
+  log.push("✓ home featured links");
+  const summary = `Baked ${baked} project page(s) + listing + home.`;
+  log.push(summary);
+  return { baked, log };
 }
 
-main();
+// Auto-run when invoked directly: `node cms/bake.mjs`
+import { fileURLToPath } from "node:url";
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const { log } = bake();
+  for (const line of log) console.log("  " + line);
+}
