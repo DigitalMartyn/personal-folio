@@ -183,29 +183,125 @@
     });
   }
 
+  var FV_ICON = {
+    play: '<svg viewBox="0 0 24 24" width="13" height="13" fill="#fff"><path d="M7 5l12 7-12 7z"></path></svg>',
+    pause:
+      '<svg viewBox="0 0 24 24" width="13" height="13" fill="#fff"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg>',
+    muted:
+      '<svg viewBox="0 0 24 24" width="13" height="13" fill="#fff"><path d="M11 5 6 9H3v6h3l5 4z"></path><line x1="16" y1="9" x2="21" y2="15" stroke="#fff" stroke-width="2" stroke-linecap="round"></line><line x1="21" y1="9" x2="16" y2="15" stroke="#fff" stroke-width="2" stroke-linecap="round"></line></svg>',
+    unmuted:
+      '<svg viewBox="0 0 24 24" width="13" height="13" fill="#fff"><path d="M11 5 6 9H3v6h3l5 4z"></path><path d="M16 8.5a4 4 0 0 1 0 7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"></path></svg>',
+  };
+
+  function injectFloatingVideoStyles() {
+    if (document.getElementById("fv-styles")) return;
+    var css =
+      '[data-framer-name="Floating YouTube Video"]{top:auto!important;bottom:24px!important;right:24px!important;left:auto!important;padding:0!important;background:transparent!important;cursor:grab;touch-action:none}' +
+      '[data-framer-name="Floating YouTube Video"].fv-dragging{cursor:grabbing}' +
+      ".floating-video{position:relative;width:100%;height:100%;overflow:hidden;background:#000;border-radius:inherit}" +
+      ".floating-video__el{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}" +
+      ".floating-video__controls{position:absolute;right:8px;bottom:8px;display:flex;gap:5px;opacity:0;transition:opacity .2s ease}" +
+      '[data-framer-name="Floating YouTube Video"]:hover .floating-video__controls{opacity:1}' +
+      ".floating-video__btn{width:24px;height:24px;padding:0;border:none;border-radius:50%;background:rgba(0,0,0,.5);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s ease}" +
+      ".floating-video__btn:hover{background:rgba(0,0,0,.8)}";
+    var s = document.createElement("style");
+    s.id = "fv-styles";
+    s.textContent = css;
+    document.head.appendChild(s);
+  }
+
   function setupFloatingVideo() {
-    document.querySelectorAll(".floating-video").forEach(function (box) {
+    var boxes = document.querySelectorAll(".floating-video");
+    if (!boxes.length) return;
+    injectFloatingVideoStyles();
+
+    boxes.forEach(function (box) {
+      var wrap = box.closest('[data-framer-name="Floating YouTube Video"]');
       var video = box.querySelector("video");
-      var btn = box.querySelector(".floating-video__play");
-      if (!video || !btn) return;
+      if (!video) return;
+      var btnRestart = box.querySelector('[data-fv="restart"]');
+      var btnPlay = box.querySelector('[data-fv="playpause"]');
+      var btnMute = box.querySelector('[data-fv="mute"]');
 
-      function start() {
-        if (video.controls) return;
-        video.controls = true;
-        btn.style.display = "none";
-        var p = video.play();
-        if (p && p.catch) p.catch(function () {});
+      // Nudge autoplay (muted autoplay is allowed without a gesture).
+      var p = video.play();
+      if (p && p.catch) p.catch(function () {});
+
+      if (btnRestart)
+        btnRestart.addEventListener("click", function (e) {
+          e.stopPropagation();
+          video.currentTime = 0;
+          video.play();
+        });
+
+      if (btnPlay)
+        btnPlay.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (video.paused) {
+            video.play();
+            btnPlay.innerHTML = FV_ICON.pause;
+            btnPlay.setAttribute("aria-label", "Pause");
+          } else {
+            video.pause();
+            btnPlay.innerHTML = FV_ICON.play;
+            btnPlay.setAttribute("aria-label", "Play");
+          }
+        });
+
+      if (btnMute)
+        btnMute.addEventListener("click", function (e) {
+          e.stopPropagation();
+          video.muted = !video.muted;
+          btnMute.innerHTML = video.muted ? FV_ICON.muted : FV_ICON.unmuted;
+          btnMute.setAttribute("aria-label", video.muted ? "Unmute" : "Mute");
+        });
+
+      // Drag to reposition (grab anywhere except the control buttons).
+      if (wrap && window.PointerEvent) {
+        var dragging = false,
+          sx,
+          sy,
+          ox,
+          oy;
+        box.addEventListener("pointerdown", function (e) {
+          if (e.target.closest(".floating-video__btn")) return;
+          dragging = true;
+          wrap.classList.add("fv-dragging");
+          var r = wrap.getBoundingClientRect();
+          wrap.style.setProperty("top", r.top + "px", "important");
+          wrap.style.setProperty("left", r.left + "px", "important");
+          wrap.style.setProperty("bottom", "auto", "important");
+          wrap.style.setProperty("right", "auto", "important");
+          sx = e.clientX;
+          sy = e.clientY;
+          ox = r.left;
+          oy = r.top;
+          try {
+            box.setPointerCapture(e.pointerId);
+          } catch (_) {}
+          e.preventDefault();
+        });
+        box.addEventListener("pointermove", function (e) {
+          if (!dragging) return;
+          var r = wrap.getBoundingClientRect();
+          var nx = ox + (e.clientX - sx);
+          var ny = oy + (e.clientY - sy);
+          nx = Math.max(8, Math.min(window.innerWidth - r.width - 8, nx));
+          ny = Math.max(8, Math.min(window.innerHeight - r.height - 8, ny));
+          wrap.style.setProperty("left", nx + "px", "important");
+          wrap.style.setProperty("top", ny + "px", "important");
+        });
+        function endDrag(e) {
+          if (!dragging) return;
+          dragging = false;
+          wrap.classList.remove("fv-dragging");
+          try {
+            box.releasePointerCapture(e.pointerId);
+          } catch (_) {}
+        }
+        box.addEventListener("pointerup", endDrag);
+        box.addEventListener("pointercancel", endDrag);
       }
-
-      box.addEventListener("click", function () {
-        if (!video.controls) start();
-      });
-
-      video.addEventListener("ended", function () {
-        video.controls = false;
-        video.currentTime = 0;
-        btn.style.display = "flex";
-      });
     });
   }
 
