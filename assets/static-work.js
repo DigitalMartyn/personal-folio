@@ -52,6 +52,8 @@
       'fieldset[aria-label="Slideshow pagination controls"], [aria-label="Slideshow pagination controls"]'
     );
     controlPanels.forEach(function (panel) {
+      if (panel.dataset.swInit) return; // avoid double-binding on re-init
+      panel.dataset.swInit = "1";
       var viewport = panel.previousElementSibling;
       if (!viewport) return;
       var track = viewport.querySelector("ul");
@@ -312,5 +314,12 @@
     setupCopyToClipboard();
     setupFloatingVideo();
     setTimeout(fixOverflowingNav, 700);
+  });
+
+  // The dev CMS renderer replaces [data-cms-region] innerHTML, which drops the
+  // slideshow/reveal bindings inside those sections. Re-bind when it signals.
+  document.addEventListener("cms:rendered", function () {
+    revealOnScroll();
+    setupSlideshows();
   });
 })();

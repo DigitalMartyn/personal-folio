@@ -90,6 +90,20 @@ const server = http.createServer(async (req, res) => {
       return send(res, 400, JSON.stringify({ ok: false, error: String(e) }), "application/json");
     }
   }
+  if (url === "/cms/api/region" && req.method === "PUT") {
+    const body = await readBody(req);
+    try {
+      const { slug, regions } = JSON.parse(body);
+      const data = JSON.parse(fs.readFileSync(worksJsonPath(), "utf8"));
+      const project = data.projects.find((p) => p.slug === slug);
+      if (!project) return send(res, 404, JSON.stringify({ ok: false, error: "no such slug" }), "application/json");
+      project.regions = Object.assign({}, project.regions, regions);
+      fs.writeFileSync(worksJsonPath(), JSON.stringify(data, null, 2));
+      return send(res, 200, JSON.stringify({ ok: true }), "application/json");
+    } catch (e) {
+      return send(res, 400, JSON.stringify({ ok: false, error: String(e) }), "application/json");
+    }
+  }
   if (url === "/cms/api/bake" && req.method === "POST") {
     try {
       const result = bake();
@@ -113,6 +127,18 @@ const server = http.createServer(async (req, res) => {
   // --- Site static files ---
   const filePath = resolveSiteFile(url);
   if (!filePath) return send(res, 403, "Forbidden");
+
+  // Inject the dev renderer into site HTML so edits render live. This is only
+  // ever done by this local server — the on-disk/committed HTML never has it.
+  if (filePath.endsWith(".html")) {
+    fs.readFile(filePath, "utf8", (err, html) => {
+      if (err) return send(res, 404, "Not found");
+      const tag = '<script type="module" src="/assets/cms-render.mjs"></script>';
+      html = html.includes("</body>") ? html.replace("</body>", tag + "</body>") : html + tag;
+      return send(res, 200, html, MIME[".html"]);
+    });
+    return;
+  }
   return serveFile(res, filePath);
 });
 
