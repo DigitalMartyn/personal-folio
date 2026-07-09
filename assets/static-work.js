@@ -97,8 +97,97 @@
     });
   }
 
+  var CURSOR_LABELS = {
+    "1igxo09": "Copy",
+  };
+
+  function setupCustomCursor() {
+    var targets = document.querySelectorAll("[data-framer-cursor]");
+    if (!targets.length) return;
+
+    var pill = document.createElement("div");
+    pill.textContent = "";
+    pill.style.cssText =
+      "position:fixed;top:0;left:0;z-index:9999;pointer-events:none;" +
+      "background:#000;color:#fff;font:600 13px/1 -apple-system,sans-serif;" +
+      "padding:10px 16px;border-radius:999px;opacity:0;" +
+      "transform:translate(-50%,-50%);transition:opacity 0.15s ease;" +
+      "white-space:nowrap;";
+    document.body.appendChild(pill);
+
+    var dot = document.createElement("div");
+    dot.style.cssText =
+      "position:fixed;top:0;left:0;z-index:9998;pointer-events:none;" +
+      "width:10px;height:10px;border-radius:50%;background:rgba(0,0,0,0.4);" +
+      "opacity:0;transform:translate(-50%,-50%);transition:opacity 0.15s ease;";
+    document.body.appendChild(dot);
+
+    document.addEventListener("mousemove", function (e) {
+      pill.style.left = e.clientX + "px";
+      pill.style.top = e.clientY + "px";
+      dot.style.left = e.clientX + "px";
+      dot.style.top = e.clientY + "px";
+    });
+
+    targets.forEach(function (el) {
+      var id = el.getAttribute("data-framer-cursor");
+      if (id === "1xs2rsu") return;
+      var label = CURSOR_LABELS[id];
+      el.addEventListener("mouseenter", function () {
+        if (label) {
+          pill.textContent = label;
+          pill.style.opacity = "1";
+        } else {
+          dot.style.opacity = "1";
+        }
+      });
+      el.addEventListener("mouseleave", function () {
+        pill.style.opacity = "0";
+        dot.style.opacity = "0";
+      });
+    });
+  }
+
+  function setupCopyToClipboard() {
+    var emailBlocks = document.querySelectorAll('[data-framer-cursor="1igxo09"]');
+    emailBlocks.forEach(function (block) {
+      var text = block.textContent.trim();
+      var match = text.match(/[^\s]+@[^\s]+\.[^\s]+/);
+      if (!match) return;
+      block.style.cursor = "pointer";
+      block.addEventListener("click", function () {
+        if (navigator.clipboard) navigator.clipboard.writeText(match[0]);
+      });
+    });
+  }
+
+  function fixOverflowingNav() {
+    var headers = document.querySelectorAll("header");
+    headers.forEach(function (header) {
+      var all = header.querySelectorAll("*");
+      Array.prototype.forEach.call(all, function (el) {
+        var cs = getComputedStyle(el);
+        if (cs.display !== "flex") return;
+        var kids = el.children;
+        if (!kids.length) return;
+        var kidsWidth = 0;
+        for (var i = 0; i < kids.length; i++) {
+          kidsWidth += kids[i].getBoundingClientRect().width;
+        }
+        var ownWidth = el.getBoundingClientRect().width;
+        if (kidsWidth <= ownWidth + 1) return;
+        el.style.setProperty("width", "auto", "important");
+        el.style.setProperty("max-width", "none", "important");
+        el.style.setProperty("flex", "0 0 auto", "important");
+      });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     revealOnScroll();
     setupSlideshows();
+    setupCustomCursor();
+    setupCopyToClipboard();
+    setTimeout(fixOverflowingNav, 700);
   });
 })();
