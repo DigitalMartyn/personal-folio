@@ -183,11 +183,38 @@
     });
   }
 
+  function setupFloatingVideo() {
+    document.querySelectorAll(".floating-video").forEach(function (box) {
+      var video = box.querySelector("video");
+      var btn = box.querySelector(".floating-video__play");
+      if (!video || !btn) return;
+
+      function start() {
+        if (video.controls) return;
+        video.controls = true;
+        btn.style.display = "none";
+        var p = video.play();
+        if (p && p.catch) p.catch(function () {});
+      }
+
+      box.addEventListener("click", function () {
+        if (!video.controls) start();
+      });
+
+      video.addEventListener("ended", function () {
+        video.controls = false;
+        video.currentTime = 0;
+        btn.style.display = "flex";
+      });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     revealOnScroll();
     setupSlideshows();
     setupCustomCursor();
     setupCopyToClipboard();
+    setupFloatingVideo();
     setTimeout(fixOverflowingNav, 700);
   });
 })();
