@@ -100,38 +100,71 @@
   }
 
   // Custom cursor — a faithful rebuild of the original Framer cursor (its
-  // runtime was removed on decouple). Recovered spec from the Framer bundle:
-  // a 26px solid-white circle with mix-blend-mode:difference (so it reads black
-  // on light areas and white on dark), the native cursor hidden, following the
-  // pointer. No hover state — it stays a constant dot.
+  // runtime was removed on decouple). Spec recovered from the Framer bundle,
+  // which defined one cursor component with these variants:
+  //   • default (data-framer-cursor 1xs2rsu / none): 26px white circle,
+  //     mix-blend-mode:difference (reads black on light, white on dark)
+  //   • hover (1azywwi, interactive): grows to a 70px circle, same blend
+  //   • copy  (1igxo09, email): morphs into a black pill with white "Copy" text
+  //   • pressed: shrinks on pointer-down
+  // The native cursor is hidden so this stands in for it.
   function setupCustomCursor() {
     // Only for devices with a real pointer; touch/coarse pointers keep native.
     if (!window.matchMedia || !window.matchMedia("(pointer: fine)").matches) return;
 
-    var dot = document.createElement("div");
-    dot.setAttribute("aria-hidden", "true");
-    dot.style.cssText =
-      "position:fixed;top:0;left:0;width:26px;height:26px;margin:-13px 0 0 -13px;" +
-      "border-radius:50%;background:#fff;mix-blend-mode:difference;" +
-      "z-index:2147483647;pointer-events:none;opacity:0;" +
-      "will-change:transform;transition:opacity .2s ease;";
-    document.body.appendChild(dot);
+    var css =
+      "html.has-dot-cursor, html.has-dot-cursor * { cursor: none !important; }" +
+      ".yuya-cursor{position:fixed;top:0;left:0;z-index:2147483647;pointer-events:none;" +
+      "display:flex;align-items:center;justify-content:center;box-sizing:border-box;" +
+      "width:26px;height:26px;border-radius:999px;background:#fff;mix-blend-mode:difference;" +
+      "opacity:0;transform:translate(-50%,-50%) scale(1);overflow:hidden;white-space:nowrap;" +
+      "transition:width .28s cubic-bezier(.22,1,.36,1),height .28s cubic-bezier(.22,1,.36,1)," +
+      "padding .28s cubic-bezier(.22,1,.36,1),background-color .2s ease,transform .2s ease,opacity .2s ease;}" +
+      ".yuya-cursor.is-hover{width:70px;height:70px;}" +
+      ".yuya-cursor.is-copy{width:auto;height:auto;padding:20px 30px;background:#000;mix-blend-mode:normal;}" +
+      ".yuya-cursor.is-pressed{transform:translate(-50%,-50%) scale(.62);}" +
+      ".yuya-cursor__label{color:#fff;font:500 16px/1 'Inter',-apple-system,system-ui,sans-serif;" +
+      "opacity:0;max-width:0;transition:opacity .18s ease;}" +
+      ".yuya-cursor.is-copy .yuya-cursor__label{opacity:1;max-width:200px;}";
+    var style = document.createElement("style");
+    style.textContent = css;
+    document.head.appendChild(style);
+
+    var cur = document.createElement("div");
+    cur.className = "yuya-cursor";
+    cur.setAttribute("aria-hidden", "true");
+    var label = document.createElement("span");
+    label.className = "yuya-cursor__label";
+    label.textContent = "Copy";
+    cur.appendChild(label);
+    document.body.appendChild(cur);
 
     var visible = false;
 
+    function setState(state) {
+      cur.classList.toggle("is-hover", state === "hover");
+      cur.classList.toggle("is-copy", state === "copy");
+    }
+
     document.addEventListener("mousemove", function (e) {
-      // Track the pointer directly (the original followed with no lag).
-      dot.style.transform = "translate(" + e.clientX + "px," + e.clientY + "px)";
-      if (!visible) { visible = true; dot.style.opacity = "1"; }
+      // Position instantly at the pointer; size/shape morph via CSS transition.
+      cur.style.left = e.clientX + "px";
+      cur.style.top = e.clientY + "px";
+      if (!visible) { visible = true; cur.style.opacity = "1"; }
+
+      // Pick the variant from the element under the pointer (as Framer did).
+      var hit = e.target && e.target.closest ? e.target.closest("[data-framer-cursor]") : null;
+      var id = hit && hit.getAttribute("data-framer-cursor");
+      if (id === "1igxo09") setState("copy");
+      else if (id === "1azywwi") setState("hover");
+      else setState("default");
     });
     document.addEventListener("mouseleave", function () {
-      visible = false; dot.style.opacity = "0";
+      visible = false; cur.style.opacity = "0";
     });
+    document.addEventListener("mousedown", function () { cur.classList.add("is-pressed"); });
+    document.addEventListener("mouseup", function () { cur.classList.remove("is-pressed"); });
 
-    // Hide the native cursor so the dot stands in for it (as in the original).
-    var s = document.createElement("style");
-    s.textContent = "html.has-dot-cursor, html.has-dot-cursor * { cursor: none !important; }";
-    document.head.appendChild(s);
     document.documentElement.classList.add("has-dot-cursor");
   }
 
