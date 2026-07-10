@@ -1,0 +1,22 @@
+/* Post-decouple fixes.
+ *
+ * The site was detached from Framer's client runtime (commit 430b623) so it can
+ * ship as static HTML driven by the CMS. That runtime also provided a couple of
+ * cosmetic behaviours that we restore statically here.
+ */
+
+/* 1. Cursor styling — Framer's runtime set a pointer cursor on interactive
+ *    elements (they carry data-framer-cursor). Anchors still get it from the UA,
+ *    but the button/card <div>s reverted to the default arrow. Restore it. */
+[data-framer-cursor="1azywwi"],
+[data-framer-cursor="1igxo09"] {
+  cursor: pointer;
+}
+
+/* 2. "Load More" on the works listing was Framer-runtime pagination. All live
+ *    projects are already shown (the copy even says "selected works — more on
+ *    request"), so the control has nothing to do and now does nothing. Hide the
+ *    dead button rather than leave it looking broken. */
+.framer-9ju4ua-container {
+  display: none;
+}
