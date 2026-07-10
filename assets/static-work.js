@@ -99,70 +99,40 @@
     });
   }
 
-  // Ring cursor: a circular outline that trails the pointer and scales up over
-  // interactive elements. Replaces Framer's runtime cursor (removed on decouple).
+  // Custom cursor — a faithful rebuild of the original Framer cursor (its
+  // runtime was removed on decouple). Recovered spec from the Framer bundle:
+  // a 26px solid-white circle with mix-blend-mode:difference (so it reads black
+  // on light areas and white on dark), the native cursor hidden, following the
+  // pointer. No hover state — it stays a constant dot.
   function setupCustomCursor() {
     // Only for devices with a real pointer; touch/coarse pointers keep native.
     if (!window.matchMedia || !window.matchMedia("(pointer: fine)").matches) return;
 
-    var ring = document.createElement("div");
-    ring.setAttribute("aria-hidden", "true");
-    ring.style.cssText =
-      "position:fixed;top:0;left:0;width:34px;height:34px;margin:-17px 0 0 -17px;" +
-      "border:1.5px solid rgba(0,0,0,0.55);border-radius:50%;z-index:100000;" +
-      "pointer-events:none;opacity:0;will-change:transform,opacity;" +
-      "transition:width .18s ease,height .18s ease,margin .18s ease," +
-      "background-color .18s ease,border-color .18s ease,opacity .2s ease;";
-    document.body.appendChild(ring);
+    var dot = document.createElement("div");
+    dot.setAttribute("aria-hidden", "true");
+    dot.style.cssText =
+      "position:fixed;top:0;left:0;width:26px;height:26px;margin:-13px 0 0 -13px;" +
+      "border-radius:50%;background:#fff;mix-blend-mode:difference;" +
+      "z-index:2147483647;pointer-events:none;opacity:0;" +
+      "will-change:transform;transition:opacity .2s ease;";
+    document.body.appendChild(dot);
 
-    var mx = -100, my = -100, rx = mx, ry = my, visible = false;
+    var visible = false;
 
     document.addEventListener("mousemove", function (e) {
-      mx = e.clientX; my = e.clientY;
-      if (!visible) { visible = true; ring.style.opacity = "1"; }
+      // Track the pointer directly (the original followed with no lag).
+      dot.style.transform = "translate(" + e.clientX + "px," + e.clientY + "px)";
+      if (!visible) { visible = true; dot.style.opacity = "1"; }
     });
     document.addEventListener("mouseleave", function () {
-      visible = false; ring.style.opacity = "0";
+      visible = false; dot.style.opacity = "0";
     });
 
-    (function frame() {
-      // Ease the ring toward the pointer for a trailing feel.
-      rx += (mx - rx) * 0.2;
-      ry += (my - ry) * 0.2;
-      ring.style.transform = "translate(" + rx + "px," + ry + "px)";
-      requestAnimationFrame(frame);
-    })();
-
-    function grow() {
-      ring.style.width = "56px"; ring.style.height = "56px";
-      ring.style.margin = "-28px 0 0 -28px";
-      ring.style.backgroundColor = "rgba(0,0,0,0.08)";
-      ring.style.borderColor = "rgba(0,0,0,0.75)";
-    }
-    function shrink() {
-      ring.style.width = "34px"; ring.style.height = "34px";
-      ring.style.margin = "-17px 0 0 -17px";
-      ring.style.backgroundColor = "transparent";
-      ring.style.borderColor = "rgba(0,0,0,0.55)";
-    }
-
-    // Delegate hover state so it also covers cards added/revealed later.
-    var INTERACTIVE = 'a[href], button, [data-framer-cursor="1azywwi"], [data-framer-cursor="1igxo09"]';
-    document.addEventListener("mouseover", function (e) {
-      if (e.target.closest && e.target.closest(INTERACTIVE)) grow();
-    });
-    document.addEventListener("mouseout", function (e) {
-      if (e.target.closest && e.target.closest(INTERACTIVE) &&
-          !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(INTERACTIVE))) {
-        shrink();
-      }
-    });
-
-    // Hide the native cursor now that the ring stands in for it.
+    // Hide the native cursor so the dot stands in for it (as in the original).
     var s = document.createElement("style");
-    s.textContent = "html.has-ring-cursor, html.has-ring-cursor * { cursor: none !important; }";
+    s.textContent = "html.has-dot-cursor, html.has-dot-cursor * { cursor: none !important; }";
     document.head.appendChild(s);
-    document.documentElement.classList.add("has-ring-cursor");
+    document.documentElement.classList.add("has-dot-cursor");
   }
 
   function setupCopyToClipboard() {
