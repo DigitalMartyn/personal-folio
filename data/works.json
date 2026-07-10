@@ -108,17 +108,17 @@
       "order": 5,
       "title": "COCA-COLA",
       "subtitle": "AI Sales Academy",
-      "cover": "",
-      "coverAlt": "",
-      "hasDetail": false,
+      "cover": "images/shared/0LVsuVzdIGRz7zTAxTF4jhEKro.jpg",
+      "coverAlt": "Coca-Cola AI Sales Academy",
+      "hasDetail": true,
       "meta": {
         "industry": "Beverage / FMCG Sales Enablement",
         "client": "Coca-Cola",
         "year": "2023",
         "experience": "Principal Design Manager (Microsoft)"
       },
-      "seoTitle": "",
-      "seoDescription": "",
+      "seoTitle": "Coca-Cola — AI Sales Academy · Martyn Gooding",
+      "seoDescription": "Spatial learning paired with an AI coach that cut sales onboarding from six months to weeks for Coca-Cola Hellenic — designed and prototyped at Microsoft.",
       "regions": {}
     },
     {
