@@ -99,55 +99,70 @@
     });
   }
 
-  var CURSOR_LABELS = {
-    "1igxo09": "Copy",
-  };
-
+  // Ring cursor: a circular outline that trails the pointer and scales up over
+  // interactive elements. Replaces Framer's runtime cursor (removed on decouple).
   function setupCustomCursor() {
-    var targets = document.querySelectorAll("[data-framer-cursor]");
-    if (!targets.length) return;
+    // Only for devices with a real pointer; touch/coarse pointers keep native.
+    if (!window.matchMedia || !window.matchMedia("(pointer: fine)").matches) return;
 
-    var pill = document.createElement("div");
-    pill.textContent = "";
-    pill.style.cssText =
-      "position:fixed;top:0;left:0;z-index:9999;pointer-events:none;" +
-      "background:#000;color:#fff;font:600 13px/1 -apple-system,sans-serif;" +
-      "padding:10px 16px;border-radius:999px;opacity:0;" +
-      "transform:translate(-50%,-50%);transition:opacity 0.15s ease;" +
-      "white-space:nowrap;";
-    document.body.appendChild(pill);
+    var ring = document.createElement("div");
+    ring.setAttribute("aria-hidden", "true");
+    ring.style.cssText =
+      "position:fixed;top:0;left:0;width:34px;height:34px;margin:-17px 0 0 -17px;" +
+      "border:1.5px solid rgba(0,0,0,0.55);border-radius:50%;z-index:100000;" +
+      "pointer-events:none;opacity:0;will-change:transform,opacity;" +
+      "transition:width .18s ease,height .18s ease,margin .18s ease," +
+      "background-color .18s ease,border-color .18s ease,opacity .2s ease;";
+    document.body.appendChild(ring);
 
-    var dot = document.createElement("div");
-    dot.style.cssText =
-      "position:fixed;top:0;left:0;z-index:9998;pointer-events:none;" +
-      "width:10px;height:10px;border-radius:50%;background:rgba(0,0,0,0.4);" +
-      "opacity:0;transform:translate(-50%,-50%);transition:opacity 0.15s ease;";
-    document.body.appendChild(dot);
+    var mx = -100, my = -100, rx = mx, ry = my, visible = false;
 
     document.addEventListener("mousemove", function (e) {
-      pill.style.left = e.clientX + "px";
-      pill.style.top = e.clientY + "px";
-      dot.style.left = e.clientX + "px";
-      dot.style.top = e.clientY + "px";
+      mx = e.clientX; my = e.clientY;
+      if (!visible) { visible = true; ring.style.opacity = "1"; }
+    });
+    document.addEventListener("mouseleave", function () {
+      visible = false; ring.style.opacity = "0";
     });
 
-    targets.forEach(function (el) {
-      var id = el.getAttribute("data-framer-cursor");
-      if (id === "1xs2rsu") return;
-      var label = CURSOR_LABELS[id];
-      el.addEventListener("mouseenter", function () {
-        if (label) {
-          pill.textContent = label;
-          pill.style.opacity = "1";
-        } else {
-          dot.style.opacity = "1";
-        }
-      });
-      el.addEventListener("mouseleave", function () {
-        pill.style.opacity = "0";
-        dot.style.opacity = "0";
-      });
+    (function frame() {
+      // Ease the ring toward the pointer for a trailing feel.
+      rx += (mx - rx) * 0.2;
+      ry += (my - ry) * 0.2;
+      ring.style.transform = "translate(" + rx + "px," + ry + "px)";
+      requestAnimationFrame(frame);
+    })();
+
+    function grow() {
+      ring.style.width = "56px"; ring.style.height = "56px";
+      ring.style.margin = "-28px 0 0 -28px";
+      ring.style.backgroundColor = "rgba(0,0,0,0.08)";
+      ring.style.borderColor = "rgba(0,0,0,0.75)";
+    }
+    function shrink() {
+      ring.style.width = "34px"; ring.style.height = "34px";
+      ring.style.margin = "-17px 0 0 -17px";
+      ring.style.backgroundColor = "transparent";
+      ring.style.borderColor = "rgba(0,0,0,0.55)";
+    }
+
+    // Delegate hover state so it also covers cards added/revealed later.
+    var INTERACTIVE = 'a[href], button, [data-framer-cursor="1azywwi"], [data-framer-cursor="1igxo09"]';
+    document.addEventListener("mouseover", function (e) {
+      if (e.target.closest && e.target.closest(INTERACTIVE)) grow();
     });
+    document.addEventListener("mouseout", function (e) {
+      if (e.target.closest && e.target.closest(INTERACTIVE) &&
+          !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(INTERACTIVE))) {
+        shrink();
+      }
+    });
+
+    // Hide the native cursor now that the ring stands in for it.
+    var s = document.createElement("style");
+    s.textContent = "html.has-ring-cursor, html.has-ring-cursor * { cursor: none !important; }";
+    document.head.appendChild(s);
+    document.documentElement.classList.add("has-ring-cursor");
   }
 
   function setupCopyToClipboard() {
@@ -307,12 +322,51 @@
     });
   }
 
+  // Works listing pagination. Framer's runtime used to drive "Load More"; here
+  // we show an initial batch of cards and reveal the rest on click.
+  function setupLoadMore() {
+    var grid = document.querySelector('[data-cms-cards="listing"]');
+    if (!grid) return;
+    var loadMore = document.querySelector(".framer-9ju4ua-container");
+    var cards = Array.prototype.filter.call(grid.children, function (el) {
+      return el.querySelector && el.querySelector(".framer-cw97fa-container");
+    });
+
+    var BATCH = 4;
+    var shown = BATCH;
+
+    function apply() {
+      cards.forEach(function (c, i) {
+        c.style.display = i < shown ? "" : "none";
+      });
+      if (loadMore) {
+        loadMore.style.display = shown >= cards.length ? "none" : "";
+      }
+    }
+
+    if (cards.length <= BATCH) {
+      if (loadMore) loadMore.style.display = "none";
+      return;
+    }
+
+    apply();
+    if (loadMore) {
+      loadMore.style.cursor = "pointer";
+      loadMore.addEventListener("click", function (e) {
+        e.preventDefault();
+        shown += BATCH;
+        apply();
+      });
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     revealOnScroll();
     setupSlideshows();
     setupCustomCursor();
     setupCopyToClipboard();
     setupFloatingVideo();
+    setupLoadMore();
     setTimeout(fixOverflowingNav, 700);
   });
 

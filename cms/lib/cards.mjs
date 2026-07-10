@@ -15,19 +15,38 @@ const LISTING_CARD = fs.readFileSync(path.join(TPL_DIR, "listing-card.html"), "u
 const LISTING_LOADMORE = fs.readFileSync(path.join(TPL_DIR, "listing-loadmore.html"), "utf8");
 const LISTING_PREFIX = "<!--$--><!--$-->";
 
+const PLACEHOLDER_COVER = "/assets/placeholder-cover.svg";
+
 function liveSorted(projects) {
   return projects
-    .filter((p) => p.status === "live" && p.hasDetail)
+    .filter((p) => p.status === "live")
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
 function fillCard(template, project) {
-  const cover = project.cover || "";
-  return template
-    .split("__HREF__").join(escapeAttr(projectHref(project.slug)))
+  // A card links to its detail page only when that page exists (hasDetail).
+  // Projects that are live but not yet built get a placeholder cover and a
+  // non-navigable card (so we never link to a 404), with the title always
+  // shown so they're still identifiable.
+  const linkable = !!project.hasDetail;
+  const cover = project.cover || PLACEHOLDER_COVER;
+
+  let html = template
     .split("__TITLE__").join(escapeHtml(project.title || ""))
     .split("__ALT__").join(escapeAttr(project.coverAlt || project.title || ""))
     .split("__COVER__").join(escapeAttr(cover));
+
+  if (linkable) {
+    html = html.split("__HREF__").join(escapeAttr(projectHref(project.slug)));
+  } else {
+    html = html
+      .replace('href="__HREF__"', 'data-placeholder="true"')
+      .replace(
+        'data-framer-name="Title" style="opacity:0"',
+        'data-framer-name="Title" style="opacity:1"'
+      );
+  }
+  return html;
 }
 
 // Inner HTML for the listing grid container ([data-cms-cards="listing"]).

@@ -5,18 +5,13 @@
  * cosmetic behaviours that we restore statically here.
  */
 
-/* 1. Cursor styling — Framer's runtime set a pointer cursor on interactive
- *    elements (they carry data-framer-cursor). Anchors still get it from the UA,
- *    but the button/card <div>s reverted to the default arrow. Restore it. */
+/* Cursor styling — a JS ring cursor (static-work.js) replaces Framer's runtime
+ * cursor and hides the native one on fine-pointer devices. This pointer rule is
+ * the no-JS / touch fallback so interactive elements still feel clickable. */
 [data-framer-cursor="1azywwi"],
 [data-framer-cursor="1igxo09"] {
   cursor: pointer;
 }
 
-/* 2. "Load More" on the works listing was Framer-runtime pagination. All live
- *    projects are already shown (the copy even says "selected works — more on
- *    request"), so the control has nothing to do and now does nothing. Hide the
- *    dead button rather than leave it looking broken. */
-.framer-9ju4ua-container {
-  display: none;
-}
+/* "Load More" pagination is wired up in static-work.js (show a batch, reveal
+ * more on click). No CSS override needed; JS shows/hides the control. */

@@ -104,7 +104,7 @@
     },
     {
       "slug": "coca-cola",
-      "status": "draft",
+      "status": "live",
       "order": 5,
       "title": "COCA-COLA",
       "subtitle": "AI Sales Academy",
@@ -123,7 +123,7 @@
     },
     {
       "slug": "aerospace-ai",
-      "status": "draft",
+      "status": "live",
       "order": 6,
       "title": "Aerospace AI",
       "subtitle": "AI operations intelligence",
@@ -142,7 +142,7 @@
     },
     {
       "slug": "dxb-ai",
-      "status": "draft",
+      "status": "live",
       "order": 7,
       "title": "DXB AI",
       "subtitle": "AI service platform",
@@ -154,6 +154,25 @@
         "client": "DXB AI",
         "year": "2026",
         "experience": "Principal Design Manager"
+      },
+      "seoTitle": "",
+      "seoDescription": "",
+      "regions": {}
+    },
+    {
+      "slug": "hmrc-ai-caseworker",
+      "status": "draft",
+      "order": 8,
+      "title": "HMRC",
+      "subtitle": "AI Caseworker",
+      "cover": "images/shared/case_2025_bx014_reminders_deadlines_adjustments.png",
+      "coverAlt": "",
+      "hasDetail": true,
+      "meta": {
+        "industry": "Finance",
+        "client": "HMRC",
+        "year": "2025",
+        "experience": "Prinicpal Product Designer"
       },
       "seoTitle": "",
       "seoDescription": "",
