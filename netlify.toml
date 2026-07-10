@@ -1,0 +1,9 @@
+# Static site — no build step. The pages are pre-baked HTML committed to the
+# repo, so Netlify just publishes the repo root as-is. Content workflow stays:
+# edit in the local CMS -> `node cms/bake.mjs` -> commit -> push -> auto-deploy.
+[build]
+  publish = "."
+  command = ""
+
+# Directory-style URLs (/works/equinor/ -> works/equinor/index.html) and pretty
+# URLs are handled by Netlify automatically; no redirects needed.
